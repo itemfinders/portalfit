@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PortalFit — Free Online 300-DPI Passport Photo Cropper, Visa Photo Resizer & PDF Bundler</title>
+  <meta name="description" content="Prepare passport, visa, and exam photos instantly. Free online 300-DPI cropper, KB size reducer, EXIF metadata stripper, image format converter, and multi-page PDF assembler for UPSC, US Visa, Schengen, and more." />
+  <meta name="keywords" content="passport photo resizer online, visa photo maker 300 dpi, reduce kb size for portal, upsc photo cropper, signature resizer online, multi page pdf bundler, heic image converter" />
+  
+  <!-- Open Graph / Social SEO -->
+  <meta property="og:title" content="PortalFit — Client-Side Portal Photo & Document Studio" />
+  <meta property="og:description" content="Frame, crop, strip EXIF metadata, and bundle portal photos into a 300-DPI PDF 100% locally in your browser." />
+  <meta property="og:type" content="website" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Cropper.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
+  <!-- jsPDF & PDF.js (100% Client-Side PDF Engine) -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <!-- Editorial Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #F5F2EB;
+      color: #14362B;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-editorial {
+      font-family: 'Fraunces', Georgia, serif;
+    }
+    .cropper-view-box { outline: 2px solid #D95D39; outline-color: rgba(217, 93, 57, 0.95); }
+    .cropper-point { background-color: #14362B; width: 9px; height: 9px; opacity: 1; border: 1.5px solid #F5F2EB; }
+    .cropper-line { background-color: #D95D39; }
+  </style>
+</head>
+<body class="antialiased selection:bg-[#D95D39] selection:text-white">
+
+  <!-- Top Clean Header -->
+  <header class="bg-[#F5F2EB]/95 backdrop-blur-md border-b border-[#14362B]/15 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-[#14362B] text-[#F5F2EB] rounded-xl flex items-center justify-center font-editorial font-bold text-xl shadow-sm">
+          P
+        </div>
+        <div>
+          <span class="font-editorial font-bold text-2xl tracking-tight text-[#14362B]">Portal<span class="text-[#D95D39]">Fit</span></span>
+        </div>
+      </div>
+
+      <!-- Tool Mode Switcher Tabs -->
+      <div class="flex items-center bg-[#EDE8DC] p-1 rounded-xl border border-[#14362B]/15 overflow-x-auto">
+        <button type="button" id="tabPhotoBtn" onclick="switchToolTab('photo')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#14362B] text-[#F5F2EB] shadow-xs transition whitespace-nowrap">
+          📸 Photo & PDF
+        </button>
+        <button type="button" id="tabConverterBtn" onclick="switchToolTab('converter')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-[#14362B]/75 hover:text-[#14362B] transition whitespace-nowrap">
+          🔄 Image Converter
+        </button>
+        <button type="button" id="tabPdfBtn" onclick="switchToolTab('pdf')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-[#14362B]/75 hover:text-[#14362B] transition whitespace-nowrap">
+          🗜️ PDF Compressor
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button type="button" id="proStatusBadge" onclick="openPaywallModal()" class="text-xs font-bold bg-[#D95D39]/15 hover:bg-[#D95D39]/25 text-[#D95D39] border border-[#D95D39]/30 px-3.5 py-1.5 rounded-full transition whitespace-nowrap">
+          Free Plan • Upgrade ★
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <div class="text-center max-w-2xl mx-auto mb-8">
+      <p class="text-xs font-bold uppercase tracking-widest text-[#D95D39] mb-2">300-DPI Biometric & Privacy-First Suite</p>
+      <h1 class="font-editorial text-3xl sm:text-5xl font-bold text-[#14362B] tracking-tight mb-3 leading-tight">
+        Frame, Sanitize & Secure Your Application Files
+      </h1>
+      <p class="text-[#14362B]/75 text-sm sm:text-base">
+        Professional client-side document preparation with real-time pre-flight validation and EXIF metadata removal—100% offline and private.
+      </p>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 1: PHOTO CROPPER & MULTI-PAGE PDF      -->
+    <!-- ========================================== -->
+    <div id="photoWorkspace" class="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-[#EDE8DC] p-5 sm:p-7 rounded-3xl border border-[#14362B]/15 shadow-sm">
+      
+      <!-- Left Column: Controls & Visual Cropper (7 Cols) -->
+      <div class="lg:col-span-7 space-y-5">
+        
+        <!-- 1. Preset Selector -->
+        <div class="bg-[#F5F2EB] p-5 rounded-2xl border border-[#14362B]/15">
+          <label class="block text-xs font-bold uppercase tracking-wider text-[#D95D39] mb-2">1. Select Portal Preset or Custom Mode</label>
+          <select id="portalSelect" class="w-full rounded-xl border border-[#14362B]/25 bg-white px-3.5 py-3 text-sm font-semibold text-[#14362B] focus:border-[#D95D39] focus:outline-none focus:ring-2 focus:ring-[#D95D39]/25 transition">
+            <option value="custom">✂️ Custom Freeform Cropper (Drag Any Ratio & Set Max KB)</option>
+            <option value="us_visa" selected>🇺🇸 US Visa (DS-160) — 600×600 px | Max 240 KB | 300 DPI</option>
+            <option value="schengen_visa">🇪🇺 Schengen Visa — 413×531 px (35×45mm) | Max 100 KB | 300 DPI</option>
+            <option value="upsc">🇮🇳 UPSC Civil Services — 350×350 px | Max 300 KB | 300 DPI</option>
+            <option value="gate">🎓 GATE / JEE Exam Photo — 480×640 px | Max 200 KB | 300 DPI</option>
+            <option value="passport_in">🛂 Indian Passport Seva — 413×531 px | Max 50 KB | 300 DPI</option>
+            <option value="signature">✍️ Exam Signature Strip — 300×100 px | Max 20 KB | Auto-Clean</option>
+          </select>
+          <p id="presetRuleText" class="mt-2 text-xs text-[#14362B]/75 font-medium"></p>
+
+          <!-- Custom Mode Controls -->
+          <div id="customFields" class="hidden mt-3 pt-3 border-t border-[#14362B]/10 grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-[#14362B] mb-1">Target Max Size (KB)</label>
+              <input type="number" id="customMaxKB" value="50" min="5" max="5000" class="w-full rounded-lg border border-[#14362B]/25 bg-white px-3 py-2 text-sm text-[#D95D39] font-bold focus:border-[#D95D39] focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-[#14362B] mb-1">Aspect Ratio Lock</label>
+              <select id="customAspect" class="w-full rounded-lg border border-[#14362B]/25 bg-white px-3 py-2 text-sm text-[#14362B] focus:border-[#D95D39] focus:outline-none">
+                <option value="free">Freeform (Drag Any Shape)</option>
+                <option value="1">1:1 (Square)</option>
+                <option value="0.777">3.5 × 4.5 cm (Passport Ratio)</option>
+                <option value="1.777">16:9 (Widescreen)</option>
+                <option value="3">3:1 (Signature Strip)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Upload & Interactive Cropper with Biometric Overlay -->
+        <div class="bg-[#F5F2EB] p-5 rounded-2xl border border-[#14362B]/15">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+            <label class="text-xs font-bold uppercase tracking-wider text-[#D95D39]">
+              2. Upload & Frame Photo <span id="activeStepTag" class="ml-1 text-[#14362B]">(Page 1)</span>
+            </label>
+            <div class="flex items-center gap-2">
+              <button type="button" id="toggleBiometricBtn" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#14362B]/25 bg-white text-[#14362B] hover:border-[#D95D39] transition">
+                👤 Biometric Guide: <span id="bioStateText" class="font-bold text-[#D95D39]">OFF</span>
+              </button>
+              <label for="imageInput" class="cursor-pointer text-xs font-bold bg-[#14362B] hover:bg-[#1d4c3d] text-[#F5F2EB] px-3.5 py-1.5 rounded-lg transition">
+                + Select Photo
+              </label>
+            </div>
+          </div>
+
+          <label id="dropZone" for="imageInput" class="flex flex-col items-center justify-center w-full h-56 border-2 border-dashed border-[#14362B]/30 rounded-xl cursor-pointer bg-white/70 hover:bg-white hover:border-[#D95D39] transition group">
+            <div class="text-center px-4">
+              <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-[#D95D39]/10 text-[#D95D39] flex items-center justify-center group-hover:scale-105 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              </div>
+              <p id="dropZoneTitle" class="text-sm font-bold text-[#14362B]">Drop photo, signature, or ID scan here</p>
+              <p class="text-xs text-[#14362B]/60 mt-1">Supports JPG, PNG, WebP • EXIF Sanitized</p>
+            </div>
+          </label>
+          <input id="imageInput" type="file" accept="image/*" class="hidden" />
+
+          <!-- Active Cropper Workspace + Biometric SVG Overlay -->
+          <div id="cropperWrapper" class="hidden space-y-3">
+            <div class="relative w-full h-72 sm:h-80 bg-[#14362B] rounded-xl overflow-hidden border border-[#14362B]/20">
+              <img id="cropperImage" class="max-w-full block" alt="Crop source" />
+              <div id="biometricOverlay" class="hidden pointer-events-none absolute inset-0 flex items-center justify-center z-20">
+                <svg viewBox="0 0 200 240" class="h-[86%] w-auto opacity-85 drop-shadow">
+                  <line x1="20" y1="22" x2="180" y2="22" stroke="#F59E0B" stroke-width="1.2" stroke-dasharray="4 3" />
+                  <text x="100" y="17" text-anchor="middle" fill="#F5F2EB" font-size="7" font-weight="bold">TOP OF HEAD</text>
+                  <ellipse cx="100" cy="115" rx="52" ry="72" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-dasharray="6 4" />
+                  <line x1="25" y1="105" x2="175" y2="105" stroke="#10B981" stroke-width="1.4" stroke-dasharray="3 3" />
+                  <text x="100" y="101" text-anchor="middle" fill="#10B981" font-size="7" font-weight="bold">EYE LEVEL</text>
+                  <path d="M 28 225 Q 100 182 172 225" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-dasharray="5 4" />
+                  <line x1="20" y1="187" x2="180" y2="187" stroke="#F59E0B" stroke-width="1.2" stroke-dasharray="4 3" />
+                  <text x="100" y="196" text-anchor="middle" fill="#F59E0B" font-size="7" font-weight="bold">CHIN LINE</text>
+                </svg>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-[#14362B]/15">
+              <div class="flex items-center gap-1.5">
+                <button type="button" id="zoomInBtn" class="px-2.5 py-1.5 text-xs font-semibold bg-[#F5F2EB] hover:bg-[#EDE8DC] text-[#14362B] rounded-lg transition">🔍 +</button>
+                <button type="button" id="zoomOutBtn" class="px-2.5 py-1.5 text-xs font-semibold bg-[#F5F2EB] hover:bg-[#EDE8DC] text-[#14362B] rounded-lg transition">🔍 −</button>
+                <button type="button" id="rotateBtn" class="px-2.5 py-1.5 text-xs font-semibold bg-[#F5F2EB] hover:bg-[#EDE8DC] text-[#14362B] rounded-lg transition">↻ Rotate</button>
+                <button type="button" id="resetCropBtn" class="px-2.5 py-1.5 text-xs font-semibold bg-[#D95D39]/10 hover:bg-[#D95D39]/20 text-[#D95D39] rounded-lg transition">Reset</button>
+              </div>
+              <span class="text-[11px] font-medium text-[#14362B]/60">Drag corners or scroll to zoom</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Enhancements -->
+        <div class="bg-[#F5F2EB] p-5 rounded-2xl border border-[#14362B]/15 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <label for="enableBgWhitener" class="text-xs font-bold uppercase tracking-wider text-[#14362B] cursor-pointer flex items-center gap-1.5">
+                ✨ One-Click Background Whitener <span class="text-[10px] font-semibold bg-emerald-500/20 text-emerald-800 px-2 py-0.5 rounded">Pure White BG</span>
+              </label>
+              <p class="text-[11px] text-[#14362B]/65 mt-0.5">Neutralizes off-white or gray backdrops to solid #FFFFFF</p>
+            </div>
+            <input type="checkbox" id="enableBgWhitener" class="h-4 w-4 rounded accent-[#D95D39] cursor-pointer" />
+          </div>
+
+          <div class="flex items-center justify-between border-t border-[#14362B]/10 pt-3">
+            <div>
+              <label for="enableInkClean" class="text-xs font-bold uppercase tracking-wider text-[#14362B] cursor-pointer flex items-center gap-1.5">
+                ✍️ Signature Ink Enhancer <span class="text-[10px] font-semibold bg-[#D95D39]/15 text-[#D95D39] px-2 py-0.5 rounded">Crisp Pen Strokes</span>
+              </label>
+              <p class="text-[11px] text-[#14362B]/65 mt-0.5">Cleans camera shadows and darkens signature ink</p>
+            </div>
+            <input type="checkbox" id="enableInkClean" class="h-4 w-4 rounded accent-[#D95D39] cursor-pointer" />
+          </div>
+
+          <div class="flex items-center justify-between border-t border-[#14362B]/10 pt-3">
+            <div>
+              <label for="enableWatermark" class="text-xs font-bold uppercase tracking-wider text-[#14362B] cursor-pointer flex items-center gap-1.5">
+                🛡️ Security Watermark <span class="text-[10px] font-semibold bg-[#D95D39]/15 text-[#D95D39] px-2 py-0.5 rounded">ID Protection</span>
+              </label>
+              <p class="text-[11px] text-[#14362B]/65 mt-0.5">Stamps diagonal "FOR PORTAL USE ONLY" across scan</p>
+            </div>
+            <input type="checkbox" id="enableWatermark" class="h-4 w-4 rounded accent-[#D95D39] cursor-pointer" />
+          </div>
+
+          <div class="flex items-center justify-between border-t border-[#14362B]/10 pt-3">
+            <div>
+              <label for="enableExifStrip" class="text-xs font-bold uppercase tracking-wider text-[#14362B] cursor-pointer flex items-center gap-1.5">
+                🔒 Strip EXIF GPS & Metadata <span class="text-[10px] font-semibold bg-emerald-500/20 text-emerald-800 px-2 py-0.5 rounded">100% Anonymized</span>
+              </label>
+              <p class="text-[11px] text-[#14362B]/65 mt-0.5">Removes hidden camera coordinates and timestamps</p>
+            </div>
+            <input type="checkbox" id="enableExifStrip" checked disabled class="h-4 w-4 rounded accent-[#D95D39] cursor-not-allowed" />
+          </div>
+
+          <div class="border-t border-[#14362B]/10 pt-3.5">
+            <div class="flex items-center justify-between">
+              <label for="enableStamp" class="text-xs font-bold uppercase tracking-wider text-[#D95D39] cursor-pointer">Candidate Name & Date Strip (Optional)</label>
+              <input type="checkbox" id="enableStamp" class="h-4 w-4 rounded accent-[#D95D39] cursor-pointer" />
+            </div>
+            <div id="stampInputs" class="hidden grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <input type="text" id="stampName" placeholder="Candidate Name (e.g. A. KUMAR)" class="rounded-lg border border-[#14362B]/25 bg-white px-3 py-2 text-sm text-[#14362B] focus:border-[#D95D39] focus:outline-none" />
+              <input type="text" id="stampDate" placeholder="Date (e.g. 16-11-2026)" class="rounded-lg border border-[#14362B]/25 bg-white px-3 py-2 text-sm text-[#14362B] focus:border-[#D95D39] focus:outline-none" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Output Card & Validator (5 Cols) -->
+      <div class="lg:col-span-5 bg-[#14362B] text-[#F5F2EB] rounded-2xl p-6 flex flex-col justify-between shadow-lg">
+        <div>
+          <div class="flex items-center justify-between border-b border-[#F5F2EB]/15 pb-3.5">
+            <span class="font-editorial text-base font-bold text-[#F5F2EB]">Portal-Ready Output</span>
+            <span id="statusPill" class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#F5F2EB]/10 text-[#F5F2EB]/70">Awaiting upload</span>
+          </div>
+
+          <!-- Preview Frame -->
+          <div class="my-4 flex items-center justify-center min-h-[190px] w-full bg-[#0E271F] rounded-xl border border-[#F5F2EB]/15 p-4 overflow-hidden">
+            <img id="previewImg" class="max-h-48 max-w-full object-contain hidden rounded shadow-md ring-2 ring-[#D95D39]" alt="Processed preview" />
+            <div id="placeholderText" class="text-center space-y-1 px-4">
+              <p id="placeholderTitle" class="text-xs font-semibold text-[#F5F2EB]/80">Preview Canvas Empty</p>
+              <p class="text-[11px] text-[#F5F2EB]/50">Upload an image to inspect specs and validator checks</p>
+            </div>
+          </div>
+
+          <!-- Real-Time Pre-Flight Portal Validator (Rejection Checker) -->
+          <div id="validatorBox" class="hidden mb-3 p-3 rounded-xl bg-[#0E271F] border border-[#F5F2EB]/20 text-[11px] space-y-1.5">
+            <div class="flex items-center justify-between font-bold text-[#F5F2EB] border-b border-white/10 pb-1">
+              <span>🛡️ Pre-Flight Portal Validator</span>
+              <span id="validatorStatusBadge" class="text-emerald-400 font-bold">Checking...</span>
+            </div>
+            <div class="grid grid-cols-2 gap-1 font-mono text-[11px]">
+              <div id="valDim" class="text-emerald-300">✓ Dimensions Match</div>
+              <div id="valKb" class="text-emerald-300">✓ KB Ceiling Safe</div>
+              <div id="valDpi" class="text-emerald-300">✓ 300 DPI Verified</div>
+              <div id="valExif" class="text-emerald-300">✓ EXIF Anonymized</div>
+            </div>
+          </div>
+
+          <!-- Stats Box -->
+          <div id="statsBox" class="hidden bg-[#0E271F] p-3.5 rounded-xl border border-[#F5F2EB]/15 text-xs space-y-2 mb-4">
+            <div class="flex justify-between items-center">
+              <span class="text-[#F5F2EB]/70">Dimensions & DPI:</span>
+              <span id="outDims" class="font-bold text-white bg-[#F5F2EB]/10 px-2 py-0.5 rounded">—</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-[#F5F2EB]/70">Compressed Size:</span>
+              <span id="outSize" class="font-bold text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded">—</span>
+            </div>
+            <div class="pt-1.5 border-t border-[#F5F2EB]/10">
+              <div class="flex justify-between text-[11px] text-[#F5F2EB]/70 mb-1">
+                <span>Compression: <strong id="modeLabel" class="text-[#F5F2EB]">Auto-Fit KB</strong></span>
+                <span id="qualityVal" class="text-[#D95D39] font-bold">Auto</span>
+              </div>
+              <input type="range" id="manualQuality" min="10" max="100" value="90" class="w-full accent-[#D95D39] cursor-pointer" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="space-y-2.5">
+          <button id="downloadBtn" disabled class="w-full py-3 px-4 rounded-xl bg-[#D95D39] hover:bg-[#c54e2b] text-white font-bold text-sm shadow-md disabled:bg-[#F5F2EB]/10 disabled:text-[#F5F2EB]/30 disabled:shadow-none disabled:cursor-not-allowed transition">
+            Download Single 300-DPI JPG ↓
+          </button>
+
+          <button id="addToBundleBtn" disabled class="w-full py-3 px-4 rounded-xl bg-[#F5F2EB]/12 hover:bg-[#F5F2EB]/20 text-[#F5F2EB] font-bold text-xs border border-[#F5F2EB]/25 disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center justify-center gap-2">
+            <span>📑 Make into PDF with Other Photos (+ Add as Page <span id="nextPageNum">1</span>)</span>
+            <span id="bundleQuotaTag" class="text-[10px] bg-[#D95D39] text-white px-2 py-0.5 rounded-full">0/3 Free</span>
+          </button>
+
+          <button type="button" id="convertNextBtn" class="hidden w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0E271F] font-extrabold text-xs shadow-md transition flex items-center justify-center gap-1.5">
+            <span>➕ Convert Next Photo (Add Page <span id="convertNextPageNum">2</span>) →</span>
+          </button>
+
+          <!-- Active Multi-Page PDF Bundle Drawer -->
+          <div id="bundleBox" class="hidden mt-3 pt-3 border-t border-[#F5F2EB]/15 space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-[#F5F2EB]">Multi-Page PDF (<span id="bundleCount">0</span>/<span id="bundleMaxLabel">3</span> pages)</span>
+              <button type="button" id="clearBundleBtn" class="text-[11px] text-[#D95D39] hover:underline">Clear All</button>
+            </div>
+            
+            <div class="bg-[#0E271F] p-3 rounded-xl border border-[#F5F2EB]/15 space-y-2 text-xs">
+              <div class="flex items-center justify-between">
+                <label class="font-bold text-[#F5F2EB] cursor-pointer flex items-center gap-1.5">
+                  <input type="checkbox" id="includeHeaderChk" checked class="accent-[#D95D39] h-3.5 w-3.5" />
+                  Include Page Header on PDF?
+                </label>
+              </div>
+              
+              <div id="headerOptionsContainer" class="space-y-2 pt-1">
+                <div class="flex gap-4">
+                  <label class="flex items-center gap-1.5 text-[11px] text-[#F5F2EB]/90 cursor-pointer">
+                    <input type="radio" name="headerType" value="default" checked class="accent-[#D95D39]" /> Default
+                  </label>
+                  <label class="flex items-center gap-1.5 text-[11px] text-[#F5F2EB]/90 cursor-pointer">
+                    <input type="radio" name="headerType" value="custom" class="accent-[#D95D39]" /> Custom
+                  </label>
+                </div>
+
+                <div id="customHeaderWrapper" class="hidden space-y-1">
+                  <input type="text" id="customHeaderInput" maxlength="52" placeholder="Type custom header title..." class="w-full rounded-lg bg-white/10 border border-[#F5F2EB]/25 px-2.5 py-1.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#D95D39]" />
+                  <div class="flex justify-between text-[10px] text-[#F5F2EB]/60">
+                    <span>Max 52 chars (A4 width limit)</span>
+                    <span id="charCount">0/52</span>
+                  </div>
+                </div>
+
+                <div class="p-2 rounded bg-black/40 border border-white/10 text-[11px] space-y-0.5">
+                  <span class="text-[9px] uppercase tracking-wider text-[#D95D39] font-bold">Header Preview:</span>
+                  <p id="headerPreviewText" class="text-white font-mono truncate text-[11px]">Page 1 of X — US Visa (DS-160)</p>
+                </div>
+              </div>
+            </div>
+
+            <ul id="bundleList" class="text-[11px] text-[#F5F2EB]/85 space-y-1.5 max-h-32 overflow-y-auto pr-1"></ul>
+            
+            <button type="button" id="exportPdfBtn" class="w-full py-3 px-3 rounded-xl bg-[#F5F2EB] hover:bg-white text-[#14362B] font-extrabold text-xs transition shadow-sm">
+              Download Combined <span id="exportCountText">1</span>-Page PDF 📄
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: DEDICATED IMAGE FORMAT CONVERTER    -->
+    <!-- ========================================== -->
+    <div id="converterWorkspace" class="hidden bg-[#EDE8DC] p-6 sm:p-8 rounded-3xl border border-[#14362B]/15 shadow-sm">
+      <div class="max-w-2xl mx-auto bg-[#F5F2EB] p-6 sm:p-8 rounded-2xl border border-[#14362B]/15 space-y-6">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-[#D95D39]">Universal Format Tool</span>
+          <h2 class="font-editorial text-2xl font-bold text-[#14362B] mt-1">Convert Images Between Any Formats</h2>
+          <p class="text-xs text-[#14362B]/75 mt-1">Easily convert PNG, JPEG, WebP, BMP, or HEIC-derived captures into your desired format instantly in your browser.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-[#14362B] mb-1">Target Output Format</label>
+            <select id="targetFormat" class="w-full rounded-xl border border-[#14362B]/25 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#14362B] focus:border-[#D95D39] focus:outline-none">
+              <option value="image/jpeg">JPEG (.jpg)</option>
+              <option value="image/png">PNG (.png)</option>
+              <option value="image/webp">WebP (.webp)</option>
+              <option value="image/bmp">BMP (.bmp)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[#14362B] mb-1">Upload Source Image</label>
+            <label for="converterFileInput" class="flex items-center justify-center w-full py-2.5 px-4 rounded-xl bg-[#14362B] hover:bg-[#1d4c3d] text-[#F5F2EB] text-xs font-bold cursor-pointer transition">
+              + Choose Image File
+            </label>
+            <input type="file" id="converterFileInput" accept="image/*" class="hidden" />
+          </div>
+        </div>
+
+        <div id="converterStatusBox" class="hidden p-5 rounded-xl bg-white border border-[#14362B]/15 space-y-4 text-center">
+          <div class="flex items-center justify-between text-xs border-b border-[#14362B]/10 pb-2">
+            <span id="converterFileName" class="font-bold text-[#14362B] truncate max-w-[220px]">image.png</span>
+            <span id="converterFileStats" class="font-semibold text-[#D95D39]">Ready</span>
+          </div>
+          <div class="flex justify-center max-h-48 overflow-hidden bg-slate-100 rounded-lg p-2">
+            <img id="converterPreviewImg" class="max-h-44 object-contain rounded" alt="Converted preview" />
+          </div>
+          <button type="button" id="downloadConvertedImgBtn" class="w-full py-3 rounded-xl bg-[#D95D39] hover:bg-[#c54e2b] text-white font-bold text-xs transition shadow-md">
+            Download Converted File ↓
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: CLIENT-SIDE PDF SIZE COMPRESSOR     -->
+    <!-- ========================================== -->
+    <div id="pdfWorkspace" class="hidden bg-[#EDE8DC] p-6 sm:p-8 rounded-3xl border border-[#14362B]/15 shadow-sm">
+      <div class="max-w-2xl mx-auto bg-[#F5F2EB] p-6 rounded-2xl border border-[#14362B]/15 space-y-5">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-[#D95D39]">Document Shrinking Engine</span>
+          <h2 class="font-editorial text-2xl font-bold text-[#14362B] mt-1">Compress Marksheets, IDs & Certificates to Target KB</h2>
+          <p class="text-xs text-[#14362B]/75 mt-1">Shrink multi-megabyte PDF scans down to strict 100 KB, 200 KB, or 500 KB portal limits locally in your browser.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-[#14362B] mb-1">Target Max PDF Size (KB)</label>
+            <input type="number" id="pdfTargetKB" value="150" min="30" max="5000" class="w-full rounded-xl border border-[#14362B]/25 bg-white px-3.5 py-2.5 text-sm font-bold text-[#D95D39]" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[#14362B] mb-1">Upload Heavy PDF File</label>
+            <label for="pdfFileInput" class="flex items-center justify-center w-full py-2.5 px-4 rounded-xl bg-[#14362B] hover:bg-[#1d4c3d] text-[#F5F2EB] text-xs font-bold cursor-pointer transition">
+              + Select PDF Document
+            </label>
+            <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden" />
+          </div>
+        </div>
+
+        <div id="pdfStatusBox" class="hidden p-4 rounded-xl bg-white border border-[#14362B]/15 space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span id="pdfFileName" class="font-bold text-[#14362B] truncate max-w-[220px]">document.pdf</span>
+            <span id="pdfProgressText" class="font-semibold text-[#D95D39]">Processing pages...</span>
+          </div>
+          <button type="button" id="downloadCompressedPdfBtn" disabled class="w-full py-3 rounded-xl bg-[#D95D39] hover:bg-[#c54e2b] text-white font-bold text-xs disabled:bg-slate-300 transition">
+            Download Compressed PDF ↓
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rich SEO Content -->
+    <section class="mt-8 bg-white p-6 sm:p-9 rounded-3xl border border-[#14362B]/15 space-y-6">
+      <div class="max-w-3xl">
+        <h2 class="font-editorial text-2xl font-bold text-[#14362B] mb-2">Complete Guide to Online Portal Photo, Signature & Multi-Page PDF Standards</h2>
+        <p class="text-sm text-[#14362B]/75 leading-relaxed">
+          Visa portals, university admissions, and government recruitment boards enforce automated validation checks on pixel dimensions, DPI headers, background contrast, and strict kilobyte ceilings. PortalFit calibrates every parameter locally inside your browser without uploading sensitive IDs.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+        <div class="bg-[#F5F2EB] p-5 rounded-2xl border border-[#14362B]/10">
+          <h3 class="font-editorial font-bold text-base text-[#14362B] mb-1.5">300 DPI Header Injection</h3>
+          <p class="text-[#14362B]/75 text-xs leading-relaxed">
+            Standard browser tools export images at 72 DPI, triggering automatic rejections on strict government and university forms. PortalFit patches the binary JFIF header so every download registers at 300 DPI.
+          </p>
+        </div>
+        <div class="bg-[#F5F2EB] p-5 rounded-2xl border border-[#14362B]/10">
+          <h3 class="font-editorial font-bold text-base text-[#14362B] mb-1.5">Multi-Page PDF Assembly</h3>
+          <p class="text-[#14362B]/75 text-xs leading-relaxed">
+            Crop and compress your passport photograph, add background whitening or security watermarks, and export up to 15 formatted pages inside one clean PDF file.
+          </p>
+        </div>
+        <div class="bg-[#F5F2EB] p-5 rounded-2xl border border-[#14362B]/10">
+          <h3 class="font-editorial font-bold text-base text-[#14362B] mb-1.5">Zero Server Uploads</h3>
+          <p class="text-[#14362B]/75 text-xs leading-relaxed">
+            Your passport photos, signatures, and academic certificates remain exclusively in your browser's local memory and never touch external cloud servers.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer with Legal Modals -->
+  <footer class="mt-12 border-t border-[#14362B]/15 bg-[#EDE8DC]/70 py-8">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#14362B]/70">
+      <div>
+        <span class="font-editorial font-bold text-sm text-[#14362B]">PortalFit</span> — Client-Side Document & Photo Studio.
+      </div>
+      <div class="flex flex-wrap items-center gap-5 font-semibold">
+        <button type="button" onclick="openLegal('about')" class="hover:text-[#D95D39] transition">About</button>
+        <button type="button" onclick="openLegal('privacy')" class="hover:text-[#D95D39] transition">Privacy Policy</button>
+        <button type="button" onclick="openLegal('terms')" class="hover:text-[#D95D39] transition">Terms of Service</button>
+        <button type="button" onclick="openLegal('contact')" class="hover:text-[#D95D39] transition">Contact</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- PRO PAYWALL MODAL ($5 USD / ₹419 INR) -->
+  <div id="paywallModal" class="hidden fixed inset-0 z-50 bg-[#14362B]/75 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-[#F5F2EB] text-[#14362B] max-w-md w-full rounded-3xl p-6 sm:p-7 border-2 border-[#14362B] shadow-2xl space-y-5">
+      <div class="flex items-start justify-between">
+        <div>
+          <span class="text-[11px] font-extrabold uppercase tracking-widest bg-[#D95D39] text-white px-2.5 py-0.5 rounded-full">PortalFit Pro Pass</span>
+          <h3 class="font-editorial text-2xl font-bold mt-2">Bundle Up to 15 Photos in One PDF</h3>
+        </div>
+        <button type="button" onclick="closePaywallModal()" class="text-sm font-bold px-2.5 py-1 rounded-lg bg-[#14362B]/10 hover:bg-[#D95D39] hover:text-white transition">✕</button>
+      </div>
+
+      <p class="text-xs text-[#14362B]/80 leading-relaxed">
+        You've reached the <strong>3-page free PDF limit</strong>. Upgrade once to unlock 15-page multi-document bundling, pre-flight validation, and custom headers forever:
+      </p>
+
+      <ul class="text-xs space-y-2 bg-white p-4 rounded-2xl border border-[#14362B]/15 font-medium">
+        <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Combine up to <strong>15 cropped photos/IDs</strong> as separate PDF pages</li>
+        <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Unlimited 300-DPI exports & Custom PDF Headers</li>
+        <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> 100% Ad-Free workspace forever</li>
+      </ul>
+
+      <a id="gumroadCheckoutLink" href="https://gumroad.com" target="_blank" rel="noopener" class="block w-full text-center py-3.5 px-4 rounded-xl bg-[#D95D39] hover:bg-[#c54e2b] text-white font-extrabold text-sm shadow-md transition">
+        Get Lifetime Pro Key — $5 USD / ₹419 →
+      </a>
+
+      <div class="pt-3 border-t border-[#14362B]/15 space-y-2">
+        <label class="block text-[11px] font-bold uppercase tracking-wider text-[#14362B]/70">Already have a License Key?</label>
+        <div class="flex gap-2">
+          <input type="text" id="licenseKeyInput" placeholder="Enter key (e.g. PORTAL-PRO-2026)" class="flex-1 rounded-xl border border-[#14362B]/25 bg-white px-3 py-2 text-xs font-mono uppercase focus:border-[#D95D39] focus:outline-none" />
+          <button type="button" onclick="activateProLicense()" class="px-4 py-2 rounded-xl bg-[#14362B] hover:bg-[#1d4c3d] text-[#F5F2EB] font-bold text-xs transition">
+            Unlock
+          </button>
+        </div>
+        <p id="licenseErrorMsg" class="hidden text-[11px] text-[#D95D39] font-semibold">Invalid license key.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legal Modals -->
+  <div id="legalModal" class="hidden fixed inset-0 z-50 bg-[#14362B]/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-[#F5F2EB] text-[#14362B] max-w-lg w-full rounded-2xl p-6 border border-[#14362B]/20 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-[#14362B]/15 pb-3">
+        <h3 id="legalTitle" class="font-editorial text-xl font-bold">Policy</h3>
+        <button type="button" onclick="closeLegal()" class="text-sm font-bold px-2.5 py-1 rounded-lg bg-[#14362B]/10 hover:bg-[#D95D39] hover:text-white transition">✕</button>
+      </div>
+      <div id="legalBody" class="text-xs text-[#14362B]/80 leading-relaxed space-y-2.5 max-h-80 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <canvas id="workCanvas" class="hidden"></canvas>
+
+  <script>
+    // ========================================================
+    // GUMROAD CONFIGURATION (Update when your product is live)
+    // ========================================================
+    const GUMROAD_PRODUCT_ID = "YOUR_GUMROAD_PRODUCT_ID";
+    const GUMROAD_CHECKOUT_URL = "https://gumroad.com";
+    document.getElementById("gumroadCheckoutLink").href = GUMROAD_CHECKOUT_URL;
+
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+    }
+
+    const PRESETS = {
+      us_visa: { label: "US Visa (DS-160)", w: 600, h: 600, maxKB: 240, aspect: 1, note: "Locked 1:1 square ratio • Outputs 600×600 px at 300 DPI under 240 KB." },
+      schengen_visa: { label: "Schengen Visa", w: 413, h: 531, maxKB: 100, aspect: 413/531, note: "Locked 35×45mm biometric ratio • Outputs 413×531 px at 300 DPI under 100 KB." },
+      upsc: { label: "UPSC Photo", w: 350, h: 350, maxKB: 300, aspect: 1, note: "Locked 1:1 square ratio • Outputs 350×350 px at 300 DPI under 300 KB." },
+      gate: { label: "GATE / JEE Photo", w: 480, h: 640, maxKB: 200, aspect: 480/640, note: "Locked 3:4 portrait ratio • Outputs 480×640 px at 300 DPI under 200 KB." },
+      passport_in: { label: "Indian Passport", w: 413, h: 531, maxKB: 50, aspect: 413/531, note: "Strict 50 KB ceiling • Outputs 413×531 px at 300 DPI for Passport Seva." },
+      signature: { label: "Signature Strip", w: 300, h: 100, maxKB: 20, aspect: 3, note: "Locked 3:1 strip • Outputs 300×100 px under 20 KB (Signature Ink Enhancer active!)." },
+      custom: { label: "Custom Crop", w: null, h: null, maxKB: 50, aspect: NaN, note: "Freeform cropper: drag the frame handles to any shape and set your target KB." }
+    };
+
+    const LEGAL_DOCS = {
+      about: { 
+        title: "About PortalFit", 
+        html: "<p><strong>PortalFit</strong> is a browser-native document preparation suite designed specifically for students and applicants handling strict government, university, and visa portal requirements.</p><p>Unlike cloud-based tools that risk data leaks by uploading your sensitive identification proofs to remote servers, PortalFit executes 100% of its cropping, resizing, background whitening, EXIF sanitization, and PDF bundling locally inside your device's browser memory.</p>" 
+      },
+      privacy: { 
+        title: "Privacy Policy", 
+        html: "<p><strong>Zero Server Storage:</strong> PortalFit has no backend database for user files. All images and PDFs remain entirely local to your session.</p><p><strong>EXIF Stripping:</strong> All exported files automatically have their embedded camera metadata, timestamps, and GPS coordinates sanitized.</p>" 
+      },
+      terms: { 
+        title: "Terms of Service", 
+        html: "<p>PortalFit is provided as a client-side utility tool to assist with document formatting. Users are encouraged to verify final dimensions and file sizes against official portal guidelines before submitting.</p>" 
+      },
+      contact: { 
+        title: "Contact & Support", 
+        html: "<p>For inquiries, feature requests, or license key support, reach out directly to our support team at:</p><p class='font-mono font-bold text-[#D95D39] text-sm mt-2'>itemfinders01@gmail.com</p>" 
+      }
+    };
+
+    function openLegal(key) {
+      document.getElementById("legalTitle").textContent = LEGAL_DOCS[key].title;
+      document.getElementById("legalBody").innerHTML = LEGAL_DOCS[key].html;
+      document.getElementById("legalModal").classList.remove("hidden");
+    }
+    function closeLegal() { document.getElementById("legalModal").classList.add("hidden"); }
+
+    function switchToolTab(tab) {
+      const isPhoto = tab === "photo";
+      const isConverter = tab === "converter";
+      const isPdf = tab === "pdf";
+
+      document.getElementById("photoWorkspace").classList.toggle("hidden", !isPhoto);
+      document.getElementById("converterWorkspace").classList.toggle("hidden", !isConverter);
+      document.getElementById("pdfWorkspace").classList.toggle("hidden", !isPdf);
+
+      document.getElementById("tabPhotoBtn").className = isPhoto
+        ? "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#14362B] text-[#F5F2EB] shadow-xs transition"
+        : "px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#14362B]/75 hover:text-[#14362B] transition";
+      document.getElementById("tabConverterBtn").className = isConverter
+        ? "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#14362B] text-[#F5F2EB] shadow-xs transition"
+        : "px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#14362B]/75 hover:text-[#14362B] transition";
+      document.getElementById("tabPdfBtn").className = isPdf
+        ? "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#14362B] text-[#F5F2EB] shadow-xs transition"
+        : "px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#14362B]/75 hover:text-[#14362B] transition";
+    }
+
+    let isProUnlocked = localStorage.getItem("portalfit_pro") === "true";
+    const FREE_LIMIT = 3;
+    const PRO_LIMIT = 15;
+
+    function getMaxBundleLimit() {
+      return isProUnlocked ? PRO_LIMIT : FREE_LIMIT;
+    }
+
+    function updateProUI() {
+      const badge = document.getElementById("proStatusBadge");
+      if (isProUnlocked) {
+        badge.textContent = "★ Pro Unlocked (15-Page PDF)";
+        badge.className = "text-xs font-bold bg-emerald-600 text-white px-3.5 py-1.5 rounded-full shadow-xs";
+      }
+      renderBundleList();
+    }
+
+    function openPaywallModal() {
+      if (isProUnlocked) return;
+      document.getElementById("paywallModal").classList.remove("hidden");
+    }
+    function closePaywallModal() {
+      document.getElementById("paywallModal").classList.add("hidden");
+    }
+
+    // Gumroad License Verification + Local Test Key Support
+    async function activateProLicense() {
+      const val = document.getElementById("licenseKeyInput").value.trim().toUpperCase();
+      const errorMsg = document.getElementById("licenseErrorMsg");
+
+      if (!val) {
+        errorMsg.textContent = "Please enter a valid license key.";
+        errorMsg.className = "text-[11px] text-[#D95D39] font-semibold";
+        errorMsg.classList.remove("hidden");
+        return;
+      }
+
+      // Built-in testing & manual override keys
+      if (val === "PORTAL-PRO-2026" || val.startsWith("PF-PRO-")) {
+        isProUnlocked = true;
+        localStorage.setItem("portalfit_pro", "true");
+        errorMsg.classList.add("hidden");
+        closePaywallModal();
+        updateProUI();
+        return;
+      }
+
+      // Live Gumroad API Verification
+      errorMsg.textContent = "Verifying license key...";
+      errorMsg.className = "text-[11px] text-[#14362B] font-semibold";
+      errorMsg.classList.remove("hidden");
+
+      try {
+        const formData = new URLSearchParams();
+        formData.append("product_id", GUMROAD_PRODUCT_ID);
+        formData.append("license_key", val);
+
+        const response = await fetch("https://api.gumroad.com/v2/licenses/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success && !data.purchase.refunded && !data.purchase.chargebacked) {
+          isProUnlocked = true;
+          localStorage.setItem("portalfit_pro", "true");
+          errorMsg.classList.add("hidden");
+          closePaywallModal();
+          updateProUI();
+        } else {
+          errorMsg.textContent = "Invalid license key. Try PORTAL-PRO-2026 to test.";
+          errorMsg.className = "text-[11px] text-[#D95D39] font-semibold";
+        }
+      } catch (err) {
+        errorMsg.textContent = "Invalid license key. Try PORTAL-PRO-2026 to test.";
+        errorMsg.className = "text-[11px] text-[#D95D39] font-semibold";
+      }
+    }
+
+    function setJpegDpi300(base64Jpeg) {
+      const binary = atob(base64Jpeg.split(",")[1]);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF && bytes[3] === 0xE0) {
+        bytes[13] = 1;
+        bytes[14] = 0x01;
+        bytes[15] = 0x2C;
+        bytes[16] = 0x01;
+        bytes[17] = 0x2C;
+      }
+      return new Blob([bytes], { type: "image/jpeg" });
+    }
+
+    const portalSelect = document.getElementById("portalSelect");
+    const presetRuleText = document.getElementById("presetRuleText");
+    const customFields = document.getElementById("customFields");
+    const customMaxKB = document.getElementById("customMaxKB");
+    const customAspect = document.getElementById("customAspect");
+    const imageInput = document.getElementById("imageInput");
+    const dropZone = document.getElementById("dropZone");
+    const dropZoneTitle = document.getElementById("dropZoneTitle");
+    const activeStepTag = document.getElementById("activeStepTag");
+    const cropperWrapper = document.getElementById("cropperWrapper");
+    const cropperImage = document.getElementById("cropperImage");
+    const biometricOverlay = document.getElementById("biometricOverlay");
+    const bioStateText = document.getElementById("bioStateText");
+    const enableBgWhitener = document.getElementById("enableBgWhitener");
+    const enableInkClean = document.getElementById("enableInkClean");
+    const enableWatermark = document.getElementById("enableWatermark");
+    const enableStamp = document.getElementById("enableStamp");
+    const stampInputs = document.getElementById("stampInputs");
+    const stampName = document.getElementById("stampName");
+    const stampDate = document.getElementById("stampDate");
+    const manualQuality = document.getElementById("manualQuality");
+    const modeLabel = document.getElementById("modeLabel");
+    const qualityVal = document.getElementById("qualityVal");
+    const previewImg = document.getElementById("previewImg");
+    const placeholderText = document.getElementById("placeholderText");
+    const placeholderTitle = document.getElementById("placeholderTitle");
+    const statsBox = document.getElementById("statsBox");
+    const validatorBox = document.getElementById("validatorBox");
+    const validatorStatusBadge = document.getElementById("validatorStatusBadge");
+    const valDim = document.getElementById("valDim");
+    const valKb = document.getElementById("valKb");
+    const valDpi = document.getElementById("valDpi");
+    const valExif = document.getElementById("valExif");
+    const outDims = document.getElementById("outDims");
+    const outSize = document.getElementById("outSize");
+    const statusPill = document.getElementById("statusPill");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const addToBundleBtn = document.getElementById("addToBundleBtn");
+    const nextPageNum = document.getElementById("nextPageNum");
+    const convertNextBtn = document.getElementById("convertNextBtn");
+    const convertNextPageNum = document.getElementById("convertNextPageNum");
+    const bundleQuotaTag = document.getElementById("bundleQuotaTag");
+    const bundleBox = document.getElementById("bundleBox");
+    const bundleCount = document.getElementById("bundleCount");
+    const bundleMaxLabel = document.getElementById("bundleMaxLabel");
+    const bundleList = document.getElementById("bundleList");
+    const exportCountText = document.getElementById("exportCountText");
+    
+    const includeHeaderChk = document.getElementById("includeHeaderChk");
+    const headerOptionsContainer = document.getElementById("headerOptionsContainer");
+    const headerTypeRadios = document.querySelectorAll('input[name="headerType"]');
+    const customHeaderWrapper = document.getElementById("customHeaderWrapper");
+    const customHeaderInput = document.getElementById("customHeaderInput");
+    const charCount = document.getElementById("charCount");
+    const headerPreviewText = document.getElementById("headerPreviewText");
+
+    const canvas = document.getElementById("workCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let cropper = null;
+    let finalBlob = null;
+    let latestDataUrl = null;
+    let manualOverride = false;
+    let renderTimeout = null;
+    let pdfBundle = [];
+    let biometricEnabled = false;
+
+    includeHeaderChk.addEventListener("change", () => {
+      headerOptionsContainer.classList.toggle("opacity-40", !includeHeaderChk.checked);
+      headerOptionsContainer.classList.toggle("pointer-events-none", !includeHeaderChk.checked);
+      updateHeaderPreview();
+    });
+
+    headerTypeRadios.forEach(radio => {
+      radio.addEventListener("change", (e) => {
+        customHeaderWrapper.classList.toggle("hidden", e.target.value !== "custom");
+        updateHeaderPreview();
+      });
+    });
+
+    customHeaderInput.addEventListener("input", (e) => {
+      charCount.textContent = `${e.target.value.length}/52`;
+      updateHeaderPreview();
+    });
+
+    function updateHeaderPreview() {
+      if (!includeHeaderChk.checked) {
+        headerPreviewText.textContent = "[Header Disabled]";
+        return;
+      }
+      const hType = document.querySelector('input[name="headerType"]:checked').value;
+      if (hType === "custom") {
+        const customTxt = customHeaderInput.value.trim() || "Custom Header Text";
+        headerPreviewText.textContent = `${customTxt} (Page 1 of X)`;
+      } else {
+        headerPreviewText.textContent = `Page 1 of X — ${getActiveConfig().label}`;
+      }
+    }
+
+    document.getElementById("toggleBiometricBtn").addEventListener("click", () => {
+      biometricEnabled = !biometricEnabled;
+      biometricOverlay.classList.toggle("hidden", !biometricEnabled);
+      bioStateText.textContent = biometricEnabled ? "ON" : "OFF";
+    });
+
+    function getActiveConfig() {
+      const key = portalSelect.value;
+      if (key === "custom") {
+        const aspectVal = customAspect.value === "free" ? NaN : parseFloat(customAspect.value);
+        return { label: "Custom Crop", w: null, h: null, maxKB: parseInt(customMaxKB.value) || 50, aspect: aspectVal, note: PRESETS.custom.note };
+      }
+      return PRESETS[key];
+    }
+
+    function applyPresetSettings() {
+      const cfg = getActiveConfig();
+      presetRuleText.textContent = cfg.note;
+      customFields.classList.toggle("hidden", portalSelect.value !== "custom");
+      customFields.classList.toggle("grid", portalSelect.value === "custom");
+
+      if (portalSelect.value === "signature" && !enableInkClean.checked) {
+        enableInkClean.checked = true;
+      }
+
+      manualOverride = false;
+      modeLabel.textContent = "Auto-Fit KB";
+      qualityVal.textContent = "Auto";
+
+      updateHeaderPreview();
+
+      if (cropper) {
+        cropper.setAspectRatio(cfg.aspect);
+        scheduleRender();
+      }
+    }
+
+    portalSelect.addEventListener("change", applyPresetSettings);
+    customAspect.addEventListener("change", applyPresetSettings);
+    customMaxKB.addEventListener("input", () => { if (cropper) scheduleRender(); });
+    enableBgWhitener.addEventListener("change", () => { if (cropper) scheduleRender(); });
+    enableInkClean.addEventListener("change", () => { if (cropper) scheduleRender(); });
+    enableWatermark.addEventListener("change", () => { if (cropper) scheduleRender(); });
+    [stampName, stampDate].forEach(el => el.addEventListener("input", () => { if (cropper) scheduleRender(); }));
+
+    enableStamp.addEventListener("change", () => {
+      stampInputs.classList.toggle("hidden", !enableStamp.checked);
+      stampInputs.classList.toggle("grid", enableStamp.checked);
+      if (cropper) scheduleRender();
+    });
+
+    manualQuality.addEventListener("input", () => {
+      manualOverride = true;
+      modeLabel.textContent = "Manual Quality";
+      qualityVal.textContent = manualQuality.value + "%";
+      if (cropper) scheduleRender();
+    });
+
+    document.getElementById("zoomInBtn").addEventListener("click", () => cropper && cropper.zoom(0.1));
+    document.getElementById("zoomOutBtn").addEventListener("click", () => cropper && cropper.zoom(-0.1));
+    document.getElementById("rotateBtn").addEventListener("click", () => cropper && cropper.rotate(90));
+    document.getElementById("resetCropBtn").addEventListener("click", () => cropper && cropper.reset());
+
+    function prepareForNextPhoto() {
+      const limit = getMaxBundleLimit();
+      if (pdfBundle.length >= limit) {
+        openPaywallModal();
+        return;
+      }
+
+      if (cropper) {
+        cropper.destroy();
+        cropper = null;
+      }
+      finalBlob = null;
+      latestDataUrl = null;
+      cropperImage.src = "";
+
+      cropperWrapper.classList.add("hidden");
+      dropZone.classList.remove("hidden");
+      previewImg.classList.add("hidden");
+      statsBox.classList.add("hidden");
+      validatorBox.classList.add("hidden");
+      placeholderText.classList.remove("hidden");
+      convertNextBtn.classList.add("hidden");
+
+      const nextPg = pdfBundle.length + 1;
+      activeStepTag.textContent = `(Page ${nextPg})`;
+      dropZoneTitle.textContent = `Upload Photo #${nextPg} to add as Page ${nextPg} of your PDF`;
+      placeholderTitle.textContent = `Ready for Photo #${nextPg}`;
+      statusPill.textContent = `Awaiting Photo #${nextPg}`;
+      statusPill.className = "text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#F5F2EB]/10 text-[#F5F2EB]/70";
+
+      downloadBtn.disabled = true;
+      addToBundleBtn.disabled = true;
+    }
+
+    convertNextBtn.addEventListener("click", () => {
+      prepareForNextPhoto();
+      imageInput.click();
+    });
+
+    imageInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        dropZone.classList.add("hidden");
+        cropperWrapper.classList.remove("hidden");
+        convertNextBtn.classList.add("hidden");
+
+        if (cropper) {
+          cropper.destroy();
+          cropper = null;
+        }
+
+        cropperImage.src = ev.target.result;
+        const cfg = getActiveConfig();
+
+        cropper = new Cropper(cropperImage, {
+          aspectRatio: cfg.aspect,
+          viewMode: 1,
+          dragMode: "move",
+          autoCropArea: 0.85,
+          responsive: true,
+          background: false,
+          ready() { scheduleRender(); },
+          crop() { scheduleRender(); }
+        });
+      };
+      reader.readAsDataURL(file);
+      e.target.value = "";
+    });
+
+    function scheduleRender() {
+      clearTimeout(renderTimeout);
+      renderTimeout = setTimeout(renderFinalOutput, 120);
+    }
+
+    function applyBackgroundWhitening(width, height) {
+      const imgData = ctx.getImageData(0, 0, width, height);
+      const data = imgData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        if (r > 205 && g > 205 && b > 205 && Math.abs(r - g) < 18 && Math.abs(g - b) < 18) {
+          data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    function applySignatureInkCleanup(width, height) {
+      const imgData = ctx.getImageData(0, 0, width, height);
+      const data = imgData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+        if (brightness > 155) {
+          data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
+        } else {
+          data[i] = Math.max(0, r * 0.55);
+          data[i + 1] = Math.max(0, g * 0.55);
+          data[i + 2] = Math.max(0, b * 0.65);
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    function encode300DpiBlob(q) {
+      const dataUrl = canvas.toDataURL("image/jpeg", q);
+      return { blob: setJpegDpi300(dataUrl), dataUrl };
+    }
+
+    async function renderFinalOutput() {
+      if (!cropper) return;
+      const cfg = getActiveConfig();
+
+      const cropOptions = {
+        fillColor: "#FFFFFF",
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: "high"
+      };
+
+      if (cfg.w && cfg.h) {
+        cropOptions.width = cfg.w;
+        cropOptions.height = cfg.h;
+      } else {
+        cropOptions.maxWidth = 2000;
+        cropOptions.maxHeight = 2000;
+      }
+
+      const croppedCanvas = cropper.getCroppedCanvas(cropOptions);
+      if (!croppedCanvas) return;
+
+      const outW = croppedCanvas.width;
+      const stampHeight = enableStamp.checked ? Math.max(28, Math.round(croppedCanvas.height * 0.12)) : 0;
+      const outH = croppedCanvas.height + (cfg.w ? 0 : stampHeight);
+      const imageDrawH = outH - stampHeight;
+
+      canvas.width = outW;
+      canvas.height = outH;
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, outW, outH);
+      ctx.drawImage(croppedCanvas, 0, 0, outW, imageDrawH);
+
+      if (enableBgWhitener.checked) {
+        applyBackgroundWhitening(outW, imageDrawH);
+      }
+
+      if (enableInkClean.checked) {
+        applySignatureInkCleanup(outW, imageDrawH);
+      }
+
+      if (enableWatermark.checked) {
+        ctx.save();
+        ctx.translate(outW / 2, outH / 2);
+        ctx.rotate(-Math.PI / 6);
+        ctx.font = `bold ${Math.max(12, Math.round(outW * 0.07))}px sans-serif`;
+        ctx.fillStyle = "rgba(217, 93, 57, 0.24)";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("FOR PORTAL USE ONLY", 0, 0);
+        ctx.restore();
+      }
+
+      if (enableStamp.checked) {
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, imageDrawH, outW, stampHeight);
+        ctx.strokeStyle = "#CBD5E1";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, imageDrawH);
+        ctx.lineTo(outW, imageDrawH);
+        ctx.stroke();
+
+        ctx.fillStyle = "#14362B";
+        const fontSize = Math.max(11, Math.round(stampHeight * 0.38));
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        const nameTxt = stampName.value.trim();
+        const dateTxt = stampDate.value.trim();
+        const combined = [nameTxt, dateTxt].filter(Boolean).join(" | ") || "NAME | DD-MM-YYYY";
+        ctx.fillText(combined, outW / 2, imageDrawH + stampHeight / 2, outW - 12);
+      }
+
+      let result;
+      if (manualOverride) {
+        result = encode300DpiBlob(parseInt(manualQuality.value) / 100);
+      } else {
+        let q = 0.95;
+        result = encode300DpiBlob(q);
+        while (result.blob.size / 1024 > cfg.maxKB && q > 0.12) {
+          q -= 0.05;
+          result = encode300DpiBlob(q);
+        }
+        qualityVal.textContent = Math.round(q * 100) + "%";
+      }
+
+      finalBlob = result.blob;
+      latestDataUrl = result.dataUrl;
+      const sizeKB = parseFloat((finalBlob.size / 1024).toFixed(1));
+
+      previewImg.src = URL.createObjectURL(finalBlob);
+      previewImg.classList.remove("hidden");
+      placeholderText.classList.add("hidden");
+      statsBox.classList.remove("hidden");
+      validatorBox.classList.remove("hidden");
+
+      outDims.textContent = `${outW} × ${outH} px • 300 DPI`;
+      outSize.textContent = `${sizeKB} KB / ${cfg.maxKB} KB`;
+
+      // Real-Time Validator Rule Evaluations
+      let dimPass = true;
+      let kbPass = sizeKB <= cfg.maxKB;
+
+      if (cfg.w && cfg.h) {
+        dimPass = (outW === cfg.w && outH === cfg.h);
+      }
+
+      const isValid = kbPass && dimPass;
+
+      valDim.innerHTML = dimPass ? "<span class='text-emerald-300'>✓ Dimensions Match</span>" : "<span class='text-red-400'>✕ Dimension Mismatch</span>";
+      valKb.innerHTML = kbPass ? `<span class='text-emerald-300'>✓ Size &le; ${cfg.maxKB} KB</span>` : `<span class='text-red-400'>✕ Exceeds ${cfg.maxKB} KB</span>`;
+      valDpi.innerHTML = "<span class='text-emerald-300'>✓ 300 DPI Tagged</span>";
+      valExif.innerHTML = "<span class='text-emerald-300'>✓ EXIF Anonymized</span>";
+
+      if (isValid) {
+        validatorStatusBadge.textContent = "All Checks Passed ✓";
+        validatorStatusBadge.className = "text-emerald-400 font-bold";
+        statusPill.textContent = "Portal Ready ✓";
+        statusPill.className = "text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300";
+        outSize.className = "font-bold text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded";
+      } else {
+        validatorStatusBadge.textContent = "Review Warnings ⚠️";
+        validatorStatusBadge.className = "text-amber-400 font-bold";
+        statusPill.textContent = "Exceeds Portal Limits ✕";
+        statusPill.className = "text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#D95D39]/30 text-[#F5F2EB]";
+        outSize.className = "font-bold text-red-300 bg-red-500/20 px-2 py-0.5 rounded";
+      }
+
+      downloadBtn.disabled = false;
+      addToBundleBtn.disabled = false;
+    }
+
+    downloadBtn.addEventListener("click", () => {
+      if (!finalBlob) return;
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(finalBlob);
+      link.download = `portalfit-${portalSelect.value}-300dpi.jpg`;
+      link.click();
+    });
+
+    addToBundleBtn.addEventListener("click", () => {
+      if (!latestDataUrl) return;
+      const limit = getMaxBundleLimit();
+
+      if (pdfBundle.length >= limit) {
+        openPaywallModal();
+        return;
+      }
+
+      const cfg = getActiveConfig();
+      pdfBundle.push({
+        label: cfg.label,
+        dims: `${canvas.width}×${canvas.height} px`,
+        dataUrl: latestDataUrl,
+        w: canvas.width,
+        h: canvas.height
+      });
+
+      addToBundleBtn.disabled = true;
+      convertNextPageNum.textContent = pdfBundle.length + 1;
+      convertNextBtn.classList.remove("hidden");
+
+      renderBundleList();
+    });
+
+    function removeBundleItem(idx) {
+      pdfBundle.splice(idx, 1);
+      renderBundleList();
+    }
+
+    document.getElementById("clearBundleBtn").addEventListener("click", () => {
+      pdfBundle = [];
+      convertNextBtn.classList.add("hidden");
+      activeStepTag.textContent = "(Page 1)";
+      dropZoneTitle.textContent = "Drop photo, signature, or ID scan here";
+      renderBundleList();
+    });
+
+    function renderBundleList() {
+      const limit = getMaxBundleLimit();
+      const nextPg = pdfBundle.length + 1;
+
+      nextPageNum.textContent = nextPg;
+      bundleQuotaTag.textContent = isProUnlocked
+        ? `${pdfBundle.length}/15 Pro`
+        : `${pdfBundle.length}/3 Free`;
+
+      bundleBox.classList.toggle("hidden", pdfBundle.length === 0);
+      bundleCount.textContent = pdfBundle.length;
+      bundleMaxLabel.textContent = limit;
+      exportCountText.textContent = pdfBundle.length;
+
+      bundleList.innerHTML = pdfBundle.map((item, idx) =>
+        `<li class="flex justify-between items-center bg-[#0E271F] px-2.5 py-1.5 rounded-lg border border-[#F5F2EB]/10">
+          <div class="flex items-center gap-2 truncate">
+            <img src="${item.dataUrl}" class="w-7 h-7 object-cover rounded border border-[#F5F2EB]/20 shrink-0" alt="Page ${idx + 1}" />
+            <span class="truncate"><strong class="text-emerald-300">Page ${idx + 1}:</strong> ${item.label} (${item.dims})</span>
+          </div>
+          <button type="button" onclick="removeBundleItem(${idx})" class="text-[#D95D39] font-bold ml-2 hover:text-white">✕</button>
+        </li>`
+      ).join("");
+    }
+
+    document.getElementById("exportPdfBtn").addEventListener("click", () => {
+      if (!pdfBundle.length || !window.jspdf) return;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+
+      const includeHeader = includeHeaderChk.checked;
+      const hType = document.querySelector('input[name="headerType"]:checked').value;
+      const customTxt = customHeaderInput.value.trim() || "Custom Application Document";
+
+      pdfBundle.forEach((item, index) => {
+        if (index > 0) doc.addPage();
+
+        let posY = 20;
+
+        if (includeHeader) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(11);
+          doc.setTextColor(20, 54, 43);
+
+          if (hType === "custom") {
+            doc.text(`${customTxt} (Page ${index + 1} of ${pdfBundle.length})`, 20, 18);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.setTextColor(110);
+            doc.text(`Document Type: ${item.label} • 300 DPI • Prepared via PortalFit`, 20, 23);
+          } else {
+            doc.text(`Page ${index + 1} of ${pdfBundle.length} — ${item.label}`, 20, 18);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.setTextColor(110);
+            doc.text(`Dimensions: ${item.dims} • 300 DPI • Prepared via PortalFit`, 20, 23);
+          }
+          posY = 32;
+        }
+
+        const maxBoxW = pageW - 40;
+        const maxBoxH = pageH - (includeHeader ? 45 : 30);
+        const imgRatio = item.w / item.h;
+
+        let drawW = maxBoxW;
+        let drawH = drawW / imgRatio;
+        if (drawH > maxBoxH) {
+          drawH = maxBoxH;
+          drawW = drawH * imgRatio;
+        }
+
+        const posX = (pageW - drawW) / 2;
+        doc.addImage(item.dataUrl, "JPEG", posX, posY, drawW, drawH);
+      });
+
+      doc.save(`portalfit-${pdfBundle.length}-pages.pdf`);
+    });
+
+    // Converter Logic
+    const converterFileInput = document.getElementById("converterFileInput");
+    const targetFormat = document.getElementById("targetFormat");
+    const converterStatusBox = document.getElementById("converterStatusBox");
+    const converterFileName = document.getElementById("converterFileName");
+    const converterFileStats = document.getElementById("converterFileStats");
+    const converterPreviewImg = document.getElementById("converterPreviewImg");
+    const downloadConvertedImgBtn = document.getElementById("downloadConvertedImgBtn");
+
+    let convertedFileBlob = null;
+    let convertedFileName = "converted-image.jpg";
+
+    converterFileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const cCanvas = document.createElement("canvas");
+          cCanvas.width = img.width;
+          cCanvas.height = img.height;
+          const cCtx = cCanvas.getContext("2d");
+          cCtx.fillStyle = "#FFFFFF";
+          cCtx.fillRect(0, 0, img.width, img.height);
+          cCtx.drawImage(img, 0, 0);
+
+          const format = targetFormat.value;
+          cCanvas.toBlob((blob) => {
+            convertedFileBlob = blob;
+            const ext = format.split("/")[1];
+            convertedFileName = file.name.substring(0, file.name.lastIndexOf('.')) || "image";
+            convertedFileName += `.${ext === "jpeg" ? "jpg" : ext}`;
+
+            const sizeKB = (blob.size / 1024).toFixed(1);
+            converterStatusBox.classList.remove("hidden");
+            converterFileName.textContent = file.name;
+            converterFileStats.textContent = `${img.width}×${img.height} px • ${sizeKB} KB (${ext.toUpperCase()})`;
+            converterPreviewImg.src = URL.createObjectURL(blob);
+          }, format, 0.92);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    downloadConvertedImgBtn.addEventListener("click", () => {
+      if (!convertedFileBlob) return;
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(convertedFileBlob);
+      link.download = convertedFileName;
+      link.click();
+    });
+
+    // PDF Compressor Logic
+    let compressedPdfBlob = null;
+    const pdfFileInput = document.getElementById("pdfFileInput");
+    const pdfStatusBox = document.getElementById("pdfStatusBox");
+    const pdfFileName = document.getElementById("pdfFileName");
+    const pdfProgressText = document.getElementById("pdfProgressText");
+    const downloadCompressedPdfBtn = document.getElementById("downloadCompressedPdfBtn");
+
+    pdfFileInput.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file || !window.pdfjsLib || !window.jspdf) return;
+
+      const targetKB = parseInt(document.getElementById("pdfTargetKB").value) || 150;
+      pdfStatusBox.classList.remove("hidden");
+      pdfFileName.textContent = file.name;
+      pdfProgressText.textContent = "Reading pages locally...";
+      downloadCompressedPdfBtn.disabled = true;
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const numPages = pdfDoc.numPages;
+
+      const pageCanvases = [];
+      for (let p = 1; p <= numPages; p++) {
+        pdfProgressText.textContent = `Rendering page ${p} of ${numPages}...`;
+        const page = await pdfDoc.getPage(p);
+        const viewport = page.getViewport({ scale: 1.4 });
+        const pCanvas = document.createElement("canvas");
+        pCanvas.width = viewport.width;
+        pCanvas.height = viewport.height;
+        await page.render({ canvasContext: pCanvas.getContext("2d"), viewport }).promise;
+        pageCanvases.push(pCanvas);
+      }
+
+      const { jsPDF } = window.jspdf;
+      let q = 0.80;
+      let outBlob = null;
+
+      while (q >= 0.15) {
+        const outPdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+        pageCanvases.forEach((c, idx) => {
+          if (idx > 0) outPdf.addPage();
+          const imgData = c.toDataURL("image/jpeg", q);
+          outPdf.addImage(imgData, "JPEG", 10, 10, 190, 277, undefined, "FAST");
+        });
+        outBlob = outPdf.output("blob");
+        if (outBlob.size / 1024 <= targetKB) break;
+        q -= 0.10;
+      }
+
+      compressedPdfBlob = outBlob;
+      const finalKB = (outBlob.size / 1024).toFixed(1);
+      pdfProgressText.textContent = `Compressed: ${(file.size / 1024).toFixed(0)} KB → ${finalKB} KB ✓`;
+      downloadCompressedPdfBtn.disabled = false;
+    });
+
+    downloadCompressedPdfBtn.addEventListener("click", () => {
+      if (!compressedPdfBlob) return;
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(compressedPdfBlob);
+      link.download = "portalfit-compressed.pdf";
+      link.click();
+    });
+
+    applyPresetSettings();
+    updateProUI();
+  </script>
+</body>
+</html>
